@@ -14,19 +14,20 @@ Original Authors:
 Copyright (c) 2012, Benjamin Bouvier.
 All rights reserved, see the file LICENSE for conditions of use.
 
-==============================================
-			!!!! VERY IMPORTANT !!!!
-==============================================
+
+! VERY IMPORTANT !
+====================
 The remote API need updates.
 Some fonction of PYISPConfig won't work until updates are made.
+You just have to update the 'remoting.inc.php' file following theses steps
 
-On the Ispconfig server, 
+On the ISPconfig Server, 
 
 	1) Go to the REMOTE API repository file:
 
 		$ cd /usr/local/ispconfig/interface/lib/classes/remoting.inc.php
 
-	2) Update the 'remoting.inc.php' file by the 'remoting.inc.php' in files repo, 
+	2) Update the 'remoting.inc.php' file by the 'remoting.inc.php' in "Files" repo, 
 	   or get it on "http://benjaminbouvier.fr/files/remoting.inc.txt"
 
 		Detail : I just added this code, at the beginning of functions which needs dictionnaries arguments ('client_add' function  for example):
