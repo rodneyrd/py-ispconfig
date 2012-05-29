@@ -24,9 +24,13 @@ def index(request):
 
     #Add a new client and return the id.
     new_client = ispconfig_api.client_add(dict)
-    #New client's id
-    print new_client
-
+    if new_client :
+        #New client's id
+        print new_client
+    else:
+        #Error message if error
+        print ispconfig_api.error_message
+    
     #Add database to for user's ID 13
     ispconfig_api.sites_database_add(13, dict_database_to_add)
 

@@ -58,6 +58,7 @@ class PyISPconfig(object):
         self.password = password
         self.port = port
         self.session_id = None
+        self.error = {}
 
         #Creates the base url
         self.url = "https://%s:%s/remote/" % (self.ip, self.port)
@@ -74,28 +75,29 @@ class PyISPconfig(object):
         """
         Do an soap request to the ISPconfig API and return the result.
         """
+        if self.session_id:
+            #Add the session_id a the beginning of params
+            session_id = (self.session_id,)
+            if params:
+                if isinstance(params, int):
+                    params = session_id + (params,)
+                elif isinstance(params, dict):
+                    params = session_id + (params,)
+                elif isinstance(params, list):
+                    params = session_id + (params,)
+                elif isinstance(params, tuple):
+                    params = session_id + params
+                else:
+                    params = session_id + (params,)        
         try:
-            if self.session_id:
-                #Add the session_id a the beginning of params
-                session_id = (self.session_id,)
-                if params:
-                    if isinstance(params, int):
-                        params = session_id + (params,)
-                    elif isinstance(params, dict):
-                        params = session_id + (params,)
-                    elif isinstance(params, list):
-                        params = session_id + (params,)
-                    elif isinstance(params, tuple):
-                        params = session_id + params
-                    else:
-                        params = session_id + (params,)
-
             #Invoke asked method on the server
             response = self.server.invoke(method, args=params)
-
         except SOAP.faultType as e:
-            return {"error": True, "type": "faultType", "detail": e.faultstring}
+            self.error = {"error": True, "type": "faultType", "detail": e.faultstring}
+            return False
         else:
+            if not response:
+                self.error = {"error": True, "type": "string", "detail": "SOAP request return null"}
             return response
 
     def check_response(self, response, type, error_message="Problem during check response"):
@@ -111,9 +113,11 @@ class PyISPconfig(object):
         else:
             if isinstance(response, dict) and response.get('error'):
                 if response['error']:
-                    return response['detail']
+                    self.error = {"error": True, "type": response['type'], "detail": response['detail']}
+                    return False
             else:
-                return error_message
+                self.error = {"error": True, "type": "string", "detail": error_message}
+                return False
 
     def array_to_dict_response(self, params):
         """
@@ -125,10 +129,12 @@ class PyISPconfig(object):
         """
         dict = {}
         rs = SOAP.simplify(params)
-        for test in rs['item']:
-            dict[test['key']] = test['value']
-
-        return dict
+        if rs:
+            for test in rs['item']:
+                dict[test['key']] = test['value']
+            return dict
+        else:
+            return False
 
     def update_default_dict(self, default, params=None):
         """
@@ -187,7 +193,12 @@ class PyISPconfig(object):
         Output:
             Return a Dictionary with key/values of the chosen client.
         """
-        return self.array_to_dict_response(self._call("client_get", id))
+        response = self.array_to_dict_response(self._call("client_get", id))
+        if response:
+            return self.check_response(response, dict, "Error during 'client_get' method")
+        else:
+            self.error = {"error": True, "type": "string", "detail": "Client ID %s doesn't exist" % id}
+            return False        
 
     def client_add(self, params=None, reseller_id=0):
         """
@@ -264,10 +275,9 @@ class PyISPconfig(object):
                     "created_at": 0}
 
         params = self.dict_to_tuple(self.update_default_dict(default, params))
+
         #Execute method
-        response = self._call("client_add", (reseller_id, params))
-        #Check response
-        return self.check_response(response, int, "Error during 'client_add' method")
+        return self.check_response(self._call("client_add", (reseller_id, params)), int, "Error during 'client_add' method")
 
     def client_get_id(self, id):
         """
@@ -279,20 +289,14 @@ class PyISPconfig(object):
         Output:
             Returns the client ID of the user with the entered system user ID.
         """
-
         response = self._call("client_get_id", id)
-        #Check response
-        return self.check_response(response, int, "Error during 'client_get_id' method")
-
-        """
-        if isinstance(response, int):
-            return response
+        if response:
+            return self.check_response(response, dict, "Error during 'client_get_id' method")
         else:
-            if response['error']:
-                return response['detail']
-            else:
-                return "Error during client_get_id"
-        """
+            self.error = {"error": True, "type": "string", "detail": "client ID of the system user %s doesn't exist" % id}
+            return False
+
+
     def client_get_by_username(self, username):
         """
         Return the client's information by username
@@ -305,8 +309,11 @@ class PyISPconfig(object):
         """
 
         response = self.array_to_dict_response(self._call("client_get_by_username", username))
-        #Check response
-        return self.check_response(response, dict, "Error during 'client_get_by_username' method")
+        if response:
+            return self.check_response(response, dict, "Error during 'client_get_by_username' method")
+        else:
+            self.error = {"error": True, "type": "string", "detail": "Client username %s doesn't exist" % username}
+            return False  
 
     def client_change_password(self, id, password):
         """
@@ -320,9 +327,11 @@ class PyISPconfig(object):
         """
 
         response = self._call("client_change_password", (id, password))
-        #Check response
-        return self.check_response(response, int, "Error during 'client_change_password' method")
-
+        if response:
+            return self.check_response(response, int, "Error during 'client_change_password' method")
+        else:
+            self.error = {"error": True, "type": "string", "detail": "Problem during password's modification"}
+            return False  
 #
 # Actions on Databases
 #
@@ -338,6 +347,7 @@ class PyISPconfig(object):
             Returns the ID of the newly added database.
         """
         db_name_exist = db_username_exist = False
+        existing_db_name = existing_username = False
         rand = random.randint(1, 10000)
         new_db_params = None
         default = {"server_id": 1,
@@ -356,13 +366,13 @@ class PyISPconfig(object):
 
         # Check database name and username doesn't exist
         for db in user_db:
-            print "for db in user_db :"
             if db['database_name'] == default["database_name"]:
                 db_name_exist = True
-                print "db_name_exist = True"
+                existing_db_name = db['database_name']
             if db['database_user'] == default["database_user"]:
                 db_username_exist = True
-                print "new_db_username = True"
+                existing_username = db['database_user']
+
 
         # Check new database's name doesn't exist and changes it
         if db_name_exist or db_username_exist:
@@ -370,18 +380,21 @@ class PyISPconfig(object):
                 #Create new params
                 db_name_exist = db_username_exist = False
                 rand = random.randint(1, 10000)
-                new_db_params = {"database_name": "db_user%s%s" % (client_id, rand),
-                                "database_user": "db_user%s%s" % (client_id, rand), }
+                new_db_params = {"database_name": "%s%s" % (existing_db_name, rand),
+                                "database_user": "%s%s" % (existing_username, rand), }
                 #Recheck params doesn't exist in db
                 for db in user_db:
                     if db['database_name'] == new_db_params["database_name"]:
                         db_name_exist = True
+                        existing_db_name = db['database_name']
                     if db['database_user'] == new_db_params["database_user"]:
                         db_username_exist = True
+                        existing_username = db['database_user']
                 #Update params by new params
                 default = self.update_default_dict(default, new_db_params)
         #SOAPRequest
         default = self.dict_to_tuple(default)
+
         response = self._call("sites_database_add", (client_id, default))
         #Check response
         return self.check_response(response, int, "Error during 'sites_database_add' method")
@@ -396,10 +409,12 @@ class PyISPconfig(object):
         Output:
             Return a Dictionary with key/values of the chosen database.
         """
-
         response = self.array_to_dict_response(self._call("sites_database_get", id))
-        #Check response
-        return self.check_response(response, dict, "Error during 'sites_database_get' method")
+        if response:
+            return self.check_response(response, dict, "Error during 'sites_database_get' method")
+        else:
+            self.error = {"error": True, "type": "string", "detail": "Database ID %s doesn't exist" % id}
+            return False
 
     def sites_database_delete(self, id):
         """
@@ -413,8 +428,11 @@ class PyISPconfig(object):
         """
 
         response = self._call("sites_database_delete", id)
-        #Check response
-        return self.check_response(response, int, "Error during 'sites_database_delete' method")
+        if response:
+            return self.check_response(response, int, "Error during 'sites_database_delete' method")
+        else:
+            self.error = {"error": True, "type": "string", "detail": "Problem during deleting Database ID %s" % id}
+            return False
 
     def sites_database_get_all_by_user(self, client_id):
         """
@@ -428,13 +446,16 @@ class PyISPconfig(object):
         """
 
         response = self._call("sites_database_get_all_by_user", client_id)
-
-        list = []
-        if isinstance(response, typedArrayType):
-            for answer in response:
-                list.append(self.array_to_dict_response(answer))
-        #Check response
-        return self.check_response(list, type(list), "Error during 'sites_database_get_all_by_user' method")
+        if not response:
+            self.error = {"error": True, "type": "string", "detail": "No database for client ID %s" % client_id}
+            return False
+        else:
+            list = []
+            if isinstance(response, typedArrayType):
+                for answer in response:
+                    list.append(self.array_to_dict_response(answer))
+            #Check response
+            return self.check_response(list, type(list), "Error during 'sites_database_get_all_by_user' method")
 
     def sites_database_update(self, db_id, params=None):
         """
@@ -515,13 +536,12 @@ class PyISPconfig(object):
             Return a Dictionary with key/values with the server parameter's values.
         """
 
-        response = self._call("server_get_serverid_by_ip", ipaddress)
+        response = self.array_to_dict_response(self._call("server_get_serverid_by_ip", ipaddress))
         if response:
-            self.array_to_dict_response(response)
-            #Check response
             return self.check_response(response, dict, "Error during 'server_get_serverid_by_ip' method")
         else:
             return {"error": True, "type": "string", "detail": "Server doesn't exist with %s IP Adress" % ipaddress}
+
 
     def logout(self):
         """
@@ -532,3 +552,16 @@ class PyISPconfig(object):
         """
         self._call("logout")
         return True
+
+    def error_message(self):
+        """
+        Display readable error message.
+
+        Output:
+            Return string error message.
+        """        
+        if(self.error.get('error') and self.error['error']):
+            return str(self.error['detail'])
+        else:
+            return "No error message"
+  
