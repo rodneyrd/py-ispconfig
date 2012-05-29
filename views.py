@@ -23,7 +23,7 @@ def index(request):
                                "database_password": "db_user1update", }
 
     #Add a new client and return the id.
-    new_client = ispconfig_api.client_add(0, dict)
+    new_client = ispconfig_api.client_add(dict)
     #New client's id
     print new_client
 

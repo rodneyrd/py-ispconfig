@@ -133,7 +133,7 @@ DOCUMENTATION
     	ispconfig_api = PyISPconfig('127.0.0.1', 'admin', 'admin')
 
     #Adds a new client and return the id.
-	    new_client_id = ispconfig_api.client_add(0, dict)
+	    new_client_id = ispconfig_api.client_add(dict)
 	    print new_client_id 
 
 	#Disconnects from Soap Server 
