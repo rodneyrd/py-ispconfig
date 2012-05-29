@@ -24,27 +24,17 @@ def index(request):
 
     #Add a new client and return the id.
     new_client = ispconfig_api.client_add(0, dict)
-    # print new_client = New client's id
+    #New client's id
+    print new_client
 
-    new_client
-    print "return of client_get_id : "
-    print ispconfig_api.client_get_id(1)
-    """
+    #Add database to for user's ID 13
+    ispconfig_api.sites_database_add(13,dict_database_to_add)
 
-    """
-    resp = ispconfig_api.sites_database_update(3,dict_database)
-    database = ispconfig_api.sites_database_get(3)
-    """
+    #Get database's list of user's ID 13
+    print ispconfig_api.sites_database_get_all_by_user(13)
 
-    #ispconfig_api.sites_database_add(13,dict_database_to_add)
-    #print ispconfig_api.client_get_id(0)
-    #ispconfig_api.sites_database_add(13)
-    #print ispconfig_api.sites_database_get_all_by_user(13)
-    #resp = ispconfig_api.client_change_password(8,"brush")
-    #print ispconfig_api.server_get_serverid_by_ip("109.239.144.60")
+    #Update database of user's ID 13
+    print ispconfig_api.sites_database_update(13,dict_database)
 
-    return render_to_response('nsadmin/ispconfig/ispconfig_manager.html',
-        locals(),
-        context_instance=RequestContext(request))
-    """
-
+    #Change password of user's ID 13
+    print ispconfig_api.client_change_password(13,"newpassword")
