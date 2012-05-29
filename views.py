@@ -28,13 +28,13 @@ def index(request):
     print new_client
 
     #Add database to for user's ID 13
-    ispconfig_api.sites_database_add(13,dict_database_to_add)
+    ispconfig_api.sites_database_add(13, dict_database_to_add)
 
     #Get database's list of user's ID 13
     print ispconfig_api.sites_database_get_all_by_user(13)
 
     #Update database of user's ID 13
-    print ispconfig_api.sites_database_update(13,dict_database)
+    print ispconfig_api.sites_database_update(13, dict_database)
 
     #Change password of user's ID 13
-    print ispconfig_api.client_change_password(13,"newpassword")
+    print ispconfig_api.client_change_password(13, "newpassword")

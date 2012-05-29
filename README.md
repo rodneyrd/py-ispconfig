@@ -25,20 +25,26 @@ On the ISPconfig Server,
 
 	1) Go to the REMOTE API repository file:
 
-		$ cd /usr/local/ispconfig/interface/lib/classes/remoting.inc.php
+		$ cd /usr/local/ispconfig/interface/lib/classes/
 
-	2) Update the 'remoting.inc.php' file by the 'remoting.inc.php' in "Files" repo, 
-	   or get it on "http://benjaminbouvier.fr/files/remoting.inc.txt"
+	2) Update the 'remoting.inc.php' file by the 'remoting.inc.php' in "Files" repo, or get it on "http://benjaminbouvier.fr/files/remoting.inc.txt"
 
-		Detail : I just added this code, at the beginning of functions which needs dictionnaries arguments ('client_add' function  for example):
+       $ mv remoting.inc.php remoting-old.inc.php
 
-			"	
-				$mytable = array();
-				foreach($params as  $value){
-					$mytable[$value[0]] = $value[1];
-				}
-				$params = $mytable ;
-			"
+       $ wget http://benjaminbouvier.fr/files/remoting.inc.txt
+
+       $ mv remoting.inc.txt remoting.inc.php
+
+
+	Detail : I just added this code, at the beginning of functions which needs dictionnaries arguments ('client_add' function  for example):
+
+		"	
+			$mytable = array();
+			foreach($params as  $value){
+				$mytable[$value[0]] = $value[1];
+			}
+			$params = $mytable ;
+		"
 
 
 INTRODUCTION
