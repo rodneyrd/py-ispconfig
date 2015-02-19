@@ -88,7 +88,7 @@ class PyISPconfig(object):
                 elif isinstance(params, tuple):
                     params = session_id + params
                 else:
-                    params = session_id + (params,)        
+                    params = session_id + (params,)
         try:
             #Invoke asked method on the server
             response = self.server.invoke(method, args=params)
@@ -127,12 +127,17 @@ class PyISPconfig(object):
             params -- The array
 
         """
-        dict = {}
+        dictionary = {}
         rs = SOAP.simplify(params)
-        if rs:
+
+        if isinstance(rs, list):
+            for test in rs:
+                dictionary[test['item']['key']] = test['item']['value']
+            return dictionary
+        elif isinstance(rs, dict):
             for test in rs['item']:
-                dict[test['key']] = test['value']
-            return dict
+                dictionary[test['key']] = test['value']
+            return dictionary
         else:
             return False
 
@@ -198,7 +203,7 @@ class PyISPconfig(object):
             return self.check_response(response, dict, "Error during 'client_get' method")
         else:
             self.error = {"error": True, "type": "string", "detail": "Client ID %s doesn't exist" % id}
-            return False        
+            return False
 
     def client_add(self, params=None, reseller_id=0):
         """
@@ -313,7 +318,7 @@ class PyISPconfig(object):
             return self.check_response(response, dict, "Error during 'client_get_by_username' method")
         else:
             self.error = {"error": True, "type": "string", "detail": "Client username %s doesn't exist" % username}
-            return False  
+            return False
 
     def client_change_password(self, id, password):
         """
@@ -331,7 +336,7 @@ class PyISPconfig(object):
             return self.check_response(response, int, "Error during 'client_change_password' method")
         else:
             self.error = {"error": True, "type": "string", "detail": "Problem during password's modification"}
-            return False  
+            return False
 #
 # Actions on Databases
 #
@@ -559,9 +564,9 @@ class PyISPconfig(object):
 
         Output:
             Return string error message.
-        """        
+        """
         if(self.error.get('error') and self.error['error']):
             return str(self.error['detail'])
         else:
             return "No error message"
-  
+
