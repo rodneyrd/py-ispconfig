@@ -2052,6 +2052,26 @@ class remoting {
 
 	// ----------------------------------------------------------------------------------------------------------------
 	
+	//* Get record id by zone_id and name
+	public function dns_a_get_id($session_id, $zone_id, $name)
+	{
+		global $app;
+
+		if(!$this->checkPerm($session_id, 'dns_a_get')) {
+			$this->server->fault('permission_denied', 'You do not have the permissions to access this function.');
+			return false;
+		}
+
+		$rec = $app->db->queryOneRecord("SELECT id FROM dns_rr WHERE zone='".$zone_id."' AND name='".$name."' AND type='A'");
+
+		if(isset($rec['id'])) {
+			return $app->functions->intval($rec['id']);
+		} else {
+			$this->server->fault('no_domain_found', 'There is no domain ID with informed domain name.');
+			return false;
+		}
+	}
+
 	//* Get record details
 	public function dns_a_get($session_id, $primary_id)
     {
@@ -2283,6 +2303,26 @@ class remoting {
 	}
 	
 	// ----------------------------------------------------------------------------------------------------------------
+	
+	//* Get record id by zone_id and name
+	public function dns_mx_get_id($session_id, $zone_id, $name)
+	{
+		global $app;
+
+		if(!$this->checkPerm($session_id, 'dns_mx_get')) {
+			$this->server->fault('permission_denied', 'You do not have the permissions to access this function.');
+			return false;
+		}
+
+		$rec = $app->db->queryOneRecord("SELECT id FROM dns_rr WHERE zone='".$zone_id."' AND name='".$name."' AND type='MX'");
+
+		if(isset($rec['id'])) {
+			return $app->functions->intval($rec['id']);
+		} else {
+			$this->server->fault('no_domain_found', 'There is no domain ID with informed domain name.');
+			return false;
+		}
+	}
 	
 	//* Get record details
 	public function dns_mx_get($session_id, $primary_id)
