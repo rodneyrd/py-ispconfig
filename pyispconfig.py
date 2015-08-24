@@ -75,6 +75,7 @@ class PyISPconfig(object):
         """
         Do an soap request to the ISPconfig API and return the result.
         """
+
         if self.session_id:
             #Add the session_id a the beginning of params
             session_id = (self.session_id,)
@@ -570,3 +571,189 @@ class PyISPconfig(object):
         else:
             return "No error message"
 
+#
+# Actions on DNS
+#
+    def dns_zone_get_id(self, domain):
+        """
+        Return the dns zone id by domain name
+
+        Param:
+            domain -- Client's username
+
+        Output:
+            Returns the ID of the find dns zone by id.
+        """
+
+        response = self._call("dns_zone_get_id", domain)
+        if response:
+            return response
+        else:
+            self.error = {"error": True, "type": "string", "detail": "DNS zone %s doesn't exist" % domain}
+            return False
+
+    def dns_zone_get(self, zone_id):
+        """
+        Returns dns zone information by its id.
+
+        Param:
+        zone_id - ID of DNS zone
+
+        Output:
+            Return a Dictionary with key/values with the zone parameter's values.
+        """
+
+        response = self.array_to_dict_response(self._call("dns_zone_get", zone_id))
+        if response:
+            return self.check_response(response, dict, "Error during 'dns_zone_get' method")
+        else:
+            return {"error": True, "type": "string", "detail": "Zone doesn't exist with ID %s" % zone_id}
+
+    def dns_a_get_id(self, dns_zone_id, record):
+        """
+        Return the record id by name and zone ID
+
+        Param:
+            dns_zone_id - zone ID
+            record - name of record in zone dns_zone_id
+
+        Output:
+            Returns the ID of the find record in zone.
+        """
+
+        response = self._call("dns_a_get_id", (dns_zone_id,record))
+        if response:
+            return response
+        else:
+            self.error = {"error": True, "type": "string", "detail": "DNS record %s doesn't exist" % record}
+            return False
+
+    def dns_a_add(self, client_id, params=None):
+        """
+        Adds a new DNS A record.
+
+        Param:
+            id -- Client's id
+            param -- Dictionary containing record's informations.
+
+        Output:
+            Returns the ID of the newly added record.
+        """
+
+        default = {"server_id": 1,
+                   "zone": 1,
+                   "name": "www",
+                   "data": "127.0.0.1",
+                   "ttl": "3600",
+                   "type": "A",
+                   "active": "y"}
+
+        # Search server id by zone
+        if params['zone']:
+            server_id = self.dns_zone_get(params['zone'])
+            if server_id:
+                params['server_id'] = server_id['server_id']
+
+        #Update default params
+        default = self.update_default_dict(default, params)
+
+        #SOAPRequest
+        default = self.dict_to_tuple(default)
+
+        response = self._call("dns_a_add", (client_id, default))
+        #Check response
+        return self.check_response(response, int, "Error during 'dns_a_add' method")
+
+    def dns_a_delete(self, id):
+        """
+        Deletes A record.
+
+        Param:
+        id - ID of DNS zone to delete
+
+        Output:
+            Returns the number of deleted records.
+        """
+
+        response = self._call("dns_a_delete", id)
+
+        if response:
+            return self.check_response(response, int, "Error during 'dns_a_delete' method")
+        else:
+            self.error = {"error": True, "type": "string", "detail": "Problem during deleting A record ID %s" % id}
+            return False
+
+    def dns_mx_get_id(self, dns_zone_id, record):
+        """
+        Return the record id by name and zone ID
+
+        Param:
+            dns_zone_id - zone ID
+            record - name of record in zone dns_zone_id
+
+        Output:
+            Returns the ID of the find record in zone.
+        """
+
+        response = self._call("dns_mx_get_id", (dns_zone_id,record))
+        if response:
+            return response
+        else:
+            self.error = {"error": True, "type": "string", "detail": "DNS record %s doesn't exist" % record}
+            return False
+
+    def dns_mx_add(self, client_id, params=None):
+        """
+        Adds a new DNS MX record.
+
+        Param:
+            id -- Client's id
+            param -- Dictionary containing record's informations.
+
+        Output:
+            Returns the ID of the newly added record.
+        """
+
+        default = {"server_id": 1,
+                   "zone": 1,
+                   "name": "www",
+                   "data": "127.0.0.1",
+                   "aux": 10,
+                   "ttl": "3600",
+                   "type": "MX",
+                   "active": "y"}
+
+        # Search server id by zone
+        if params['zone']:
+            server_id = self.dns_zone_get(params['zone'])
+            if server_id:
+                params['server_id'] = server_id['server_id']
+
+        #Update default params
+        default = self.update_default_dict(default, params)
+
+        #SOAPRequest
+        default = self.dict_to_tuple(default)
+
+        response = self._call("dns_mx_add", (client_id, default))
+        #Check response
+        return self.check_response(response, int, "Error during 'dns_mx_add' method")
+
+    def dns_mx_delete(self, id):
+        """
+        Deletes A record.
+
+        Param:
+        id - ID of DNS zone to delete
+
+        Output:
+            Returns the number of deleted records.
+        """
+
+        response = self._call("dns_mx_delete", id)
+
+        if response:
+            return self.check_response(response, int, "Error during 'dns_mx_delete' method")
+        else:
+            self.error = {"error": True, "type": "string", "detail": "Problem during deleting A record ID %s" % id}
+            return False
